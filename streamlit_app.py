@@ -1,151 +1,118 @@
 import streamlit as st
 import pandas as pd
-import math
-from pathlib import Path
 
-# Set the title and favicon that appear in the Browser's tab bar.
+# --- PAGE CONFIGURATION ---
 st.set_page_config(
-    page_title='GDP dashboard',
-    page_icon=':earth_americas:', # This is an emoji shortcode. Could be a URL too.
+   page_title="🛒 Superstore Business Performance Dashboard",
+   page_icon="📊",
+   layout="wide",
+   initial_sidebar_state="expanded",
 )
 
-# -----------------------------------------------------------------------------
-# Declare some useful functions.
-
+# --- DATA LOADING ---
 @st.cache_data
-def get_gdp_data():
-    """Grab GDP data from a CSV file.
+def load_data():
+    url = "https://github.com/sna-ds/Superstore_Sales_Analysis/raw/5207d74b68bc081a66aa58ddf567a70d96d25a43/superstore_dataset.xlsx"
+    df = pd.read_excel(url)
+    df["order_date"] = pd.to_datetime(df["order_date"])
+    df["year"] = df["order_date"].dt.year
+    df["month"] = df["order_date"].dt.to_period("M")
+    return df
 
-    This uses caching to avoid having to read the file every time. If we were
-    reading from an HTTP endpoint instead of a file, it's a good idea to set
-    a maximum age to the cache with the TTL argument: @st.cache_data(ttl='1d')
-    """
+df = load_data()
 
-    # Instead of a CSV on disk, you could read from an HTTP endpoint here too.
-    DATA_FILENAME = Path(__file__).parent/'data/gdp_data.csv'
-    raw_gdp_df = pd.read_csv(DATA_FILENAME)
+# --- APP TITLE AND DESCRIPTION ---
+st.title("🛒 Superstore Business Performance Dashboard")
+st.markdown("""
+**Superstore is a U.S.-based retail company seeking growth opportunities through a deeper understanding of its sales performance.**
+This interactive application enables users to track sales and profit trends, identify key markets, and analyze both top-performing and underperforming products.
 
-    MIN_YEAR = 1960
-    MAX_YEAR = 2022
+It helps business leaders answer key questions such as:
+- Which cities and products contribute the most to sales and profit?
+- How do sales trends evolve over time?
+- Which categories or sub-categories are driving profit or causing losses?
 
-    # The data above has columns like:
-    # - Country Name
-    # - Country Code
-    # - [Stuff I don't care about]
-    # - GDP for 1960
-    # - GDP for 1961
-    # - GDP for 1962
-    # - ...
-    # - GDP for 2022
-    #
-    # ...but I want this instead:
-    # - Country Name
-    # - Country Code
-    # - Year
-    # - GDP
-    #
-    # So let's pivot all those year-columns into two: Year and GDP
-    gdp_df = raw_gdp_df.melt(
-        ['Country Code'],
-        [str(x) for x in range(MIN_YEAR, MAX_YEAR + 1)],
-        'Year',
-        'GDP',
-    )
+With built-in filters, the app supports deeper exploration of regions, categories, and time periods to uncover actionable business insights.
+""")
 
-    # Convert years from string to integers
-    gdp_df['Year'] = pd.to_numeric(gdp_df['Year'])
+# --- SIDEBAR FILTERS ---
+st.sidebar.header("🔎 Filters")
 
-    return gdp_df
+years = st.sidebar.multiselect("Select Year(s)", options=sorted(df["year"].unique()), default=sorted(df["year"].unique()))
+regions = st.sidebar.multiselect("Select Region(s)", options=df["region"].unique(), default=df["region"].unique())
+categories = st.sidebar.multiselect("Select Category", options=df["category"].unique(), default=df["category"].unique())
+segments = st.sidebar.multiselect("Select Segment", options=df["segment"].unique(), default=df["segment"].unique())
 
-gdp_df = get_gdp_data()
+# Filter dataframe
+df_selection = df.query("year in @years and region in @regions and category in @categories and segment in @segments")
 
-# -----------------------------------------------------------------------------
-# Draw the actual page
+if df_selection.empty:
+    st.warning("No data available for the selected filters.")
+    st.stop()
 
-# Set the title that appears at the top of the page.
-'''
-# :earth_americas: GDP dashboard
+# --- KEY METRICS ---
+st.subheader("📊 Key Metrics")
 
-Browse GDP data from the [World Bank Open Data](https://data.worldbank.org/) website. As you'll
-notice, the data only goes to 2022 right now, and datapoints for certain years are often missing.
-But it's otherwise a great (and did I mention _free_?) source of data.
-'''
+total_customers = df_selection["customer_id"].nunique()
+total_units = df_selection["quantity"].sum()
+total_sales = df_selection["sales"].sum()
+total_profit = df_selection["profit"].sum()
 
-# Add some spacing
-''
-''
+# Sales YoY Growth
+sales_by_year = df_selection.groupby("year")["sales"].sum().sort_index()
+sales_yoy = None
+if len(sales_by_year) > 1:
+    sales_yoy = ((sales_by_year.iloc[-1] - sales_by_year.iloc[-2]) / sales_by_year.iloc[-2]) * 100
 
-min_value = gdp_df['Year'].min()
-max_value = gdp_df['Year'].max()
+col1, col2, col3, col4, col5 = st.columns(5)
+col1.metric("Total Customers", total_customers)
+col2.metric("Total Units Sold", total_units)
+col3.metric("Total Sales", f"${total_sales:,.0f}")
+col4.metric("Sales YoY", f"{sales_yoy:.1f}%" if sales_yoy is not None else "N/A")
+col5.metric("Total Profit", f"${total_profit:,.0f}")
 
-from_year, to_year = st.slider(
-    'Which years are you interested in?',
-    min_value=min_value,
-    max_value=max_value,
-    value=[min_value, max_value])
+st.markdown("---")
 
-countries = gdp_df['Country Code'].unique()
+# --- SALES OVER TIME ---
+st.subheader("📈 Sales Over Time")
+sales_over_time = df_selection.groupby("month")["sales"].sum().reset_index()
+sales_over_time["month"] = sales_over_time["month"].astype(str)
+st.line_chart(sales_over_time.set_index("month"))
 
-if not len(countries):
-    st.warning("Select at least one country")
+st.markdown("---")
 
-selected_countries = st.multiselect(
-    'Which countries would you like to view?',
-    countries,
-    ['DEU', 'FRA', 'GBR', 'BRA', 'MEX', 'JPN'])
+# --- TOP PRODUCT & CITY ANALYSIS ---
+st.subheader("🏙️ Top Performance Analysis")
 
-''
-''
-''
+col1, col2 = st.columns(2)
 
-# Filter the data
-filtered_gdp_df = gdp_df[
-    (gdp_df['Country Code'].isin(selected_countries))
-    & (gdp_df['Year'] <= to_year)
-    & (from_year <= gdp_df['Year'])
-]
+with col1:
+    st.markdown("**Top 10 Cities by Sales & Profit**")
+    top_cities = df_selection.groupby("city")[["sales", "profit"]].sum().nlargest(10, "sales")
+    st.bar_chart(top_cities)
 
-st.header('GDP over time', divider='gray')
+with col2:
+    st.markdown("**Top Categories by Sales & Profit**")
+    top_cat = df_selection.groupby("category")[["sales", "profit"]].sum()
+    st.bar_chart(top_cat)
 
-''
+st.markdown("**Top 10 Sub-Categories by Sales**")
+top_subcat = df_selection.groupby("subcategory")[["sales", "profit"]].sum().nlargest(10, "sales")
+st.bar_chart(top_subcat)
 
-st.line_chart(
-    filtered_gdp_df,
-    x='Year',
-    y='GDP',
-    color='Country Code',
-)
+st.markdown("---")
 
-''
-''
+# --- SALES VS PROFIT ---
+st.subheader("💰 Sales vs Profit by Sub-Category")
 
+sales_profit = df_selection.groupby("subcategory")[["sales", "profit"]].sum().sort_values("sales", ascending=False)
+st.bar_chart(sales_profit)
 
-first_year = gdp_df[gdp_df['Year'] == from_year]
-last_year = gdp_df[gdp_df['Year'] == to_year]
+st.markdown("---")
 
-st.header(f'GDP in {to_year}', divider='gray')
+# --- RAW DATA ---
+with st.expander("🔍 View Raw Data"):
+    st.dataframe(df_selection)
+    st.markdown(f"**Data Dimensions:** {df_selection.shape[0]} rows × {df_selection.shape[1]} columns")
 
-''
-
-cols = st.columns(4)
-
-for i, country in enumerate(selected_countries):
-    col = cols[i % len(cols)]
-
-    with col:
-        first_gdp = first_year[first_year['Country Code'] == country]['GDP'].iat[0] / 1000000000
-        last_gdp = last_year[last_year['Country Code'] == country]['GDP'].iat[0] / 1000000000
-
-        if math.isnan(first_gdp):
-            growth = 'n/a'
-            delta_color = 'off'
-        else:
-            growth = f'{last_gdp / first_gdp:,.2f}x'
-            delta_color = 'normal'
-
-        st.metric(
-            label=f'{country} GDP',
-            value=f'{last_gdp:,.0f}B',
-            delta=growth,
-            delta_color=delta_color
-        )
+st.write("Data Source: Superstore Dataset (Sample Business Data)")
