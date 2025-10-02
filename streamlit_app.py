@@ -12,7 +12,7 @@ st.set_page_config(
 # --- DATA LOADING ---
 @st.cache_data
 def load_data():
-    url = "https://github.com/sna-ds/Superstore_Sales_Analysis/raw/5207d74b68bc081a66aa58ddf567a70d96d25a43/superstore_dataset.xlsx"
+    url = "https://github.com/sna-ds/gdp-dashboard-hands-on/raw/5481eb4f5760d9620869710269306922a811670c/superstore_dataset.xlsx"
     df = pd.read_excel(url)
     df["order_date"] = pd.to_datetime(df["order_date"])
     df["year"] = df["order_date"].dt.year
