@@ -1,19 +1,31 @@
-# :earth_americas: GDP dashboard template
+# 📊 Superstore Sales Dashboard (Streamlit)
 
-A simple Streamlit app showing the GDP of different countries in the world.
+This project is an **interactive business intelligence web application** built with Streamlit,  
+using the **Superstore dataset** to analyze sales, profit, and customer behavior.
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://gdp-dashboard-template.streamlit.app/)
+## 🚀 Features
+- Interactive filters: year, region, category, and customer segment
+- Key metrics:
+  - Total customers
+  - Total units sold
+  - Total sales
+  - Sales YoY growth
+  - Total profit
+- Visualizations:
+  - Sales over time
+  - Top cities by sales and profit
+  - Top categories and sub-categories
+  - Sales vs Profit analysis
+- Option to view raw dataset
 
-### How to run it on your own machine
+## 📈 Business Objective
+Superstore is a U.S.-based retail company seeking growth opportunities through a deeper understanding of its sales performance. 
 
-1. Install the requirements
+The application helps answer:
+- Which cities and products contribute the most to sales and profit?
+- How do sales trends evolve over time?
+- Which categories or sub-categories are driving profit or causing losses?
 
-   ```
-   $ pip install -r requirements.txt
-   ```
-
-2. Run the app
-
-   ```
-   $ streamlit run streamlit_app.py
-   ```
+## 🌐 Interactive App
+Click Streamlit app here:  
+👉 [Superstore Sales Dashboard](https://portfolio-superstore-sales-dashboard.streamlit.app/)
