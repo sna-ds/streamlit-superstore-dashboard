@@ -3,7 +3,7 @@
 This project is an **interactive business intelligence web application** built with Streamlit,  
 using the **Superstore dataset** to analyze sales, profit, and customer behavior.
 
-## 🚀 Features
+## Features
 - Interactive filters: year, region, category, and customer segment
 - Key metrics:
   - Total customers
@@ -18,7 +18,7 @@ using the **Superstore dataset** to analyze sales, profit, and customer behavior
   - Sales vs Profit analysis
 - Option to view raw dataset
 
-## 📈 Business Objective
+## Business Objective
 Superstore is a U.S.-based retail company seeking growth opportunities through a deeper understanding of its sales performance. 
 
 The application helps answer:
