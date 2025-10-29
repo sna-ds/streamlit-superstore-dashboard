@@ -1,4 +1,4 @@
-# 📊 Superstore Sales Dashboard (Streamlit)
+# Superstore Sales Dashboard (Streamlit)
 
 This project is an **interactive business intelligence web application** built with Streamlit,  
 using the **Superstore dataset** to analyze sales, profit, and customer behavior.
